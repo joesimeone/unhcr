@@ -1,0 +1,230 @@
+---
+title: "2023 Refugee Snapshot - A UNHCR Data Exploration"
+author: "Joe Simeone"
+format: 
+  html:
+    theme: darkly
+editor: source
+---
+
+
+
+```{r}
+#| label: Setup & Import
+#| include: false
+
+library(leaflet)
+library(refugees)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(tidyverse)
+
+# Get the world map at a medium scale (1:50m)
+
+# Imports  ----------------------------------------------------------------
+unhcr_pop <- refugees::population %>% filter(year == 2023)
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+glimpse(world)
+glimpse(unhcr_pop)
+
+```
+
+```{r}
+#| include: false
+#| label: Derive Basic Stats
+
+
+
+# Deriving something basic ------------------------------------------------
+
+## Country of Origin
+coo_stats <- unhcr_pop %>% 
+  group_by(coo_iso, .drop = "FALSE") %>% 
+  summarise(sum_ref = sum(refugees, na.rm = TRUE) + sum(oip, na.rm = TRUE),
+            sum_asy = sum(asylum_seekers, na.rm = TRUE),
+            .groups = "drop") %>% 
+  mutate(ref_per_mill = sum_ref / 1000000,
+         asy_per_mill = sum_asy / 1000000)
+
+
+## Country of Arrival / Adjudication (There is some jargon situation)
+coa_stats <- unhcr_pop %>% 
+  group_by(coa_iso, .drop = "FALSE") %>% 
+  summarise(sum_ref = sum(refugees, na.rm = TRUE) + sum(oip, na.rm = TRUE),
+            sum_asy = sum(asylum_seekers, na.rm = TRUE),
+            .groups = "drop")
+
+## Replacing NAs with if 0s - Fine here, can't really mean anything else
+
+
+# Joining data to world sf ------------------------------------------------
+
+## World data has lots of possible join keys - iso code yields that 1-to-1
+coo_shp <- world %>% 
+  left_join(coo_stats,
+            by = c("iso_a3_eh" = "coo_iso")) %>% 
+  mutate(across(where(is.numeric), ~ ifelse(is.na(.), 0, .))) %>% 
+  st_as_sf()
+
+coa_shp <- world %>% 
+  left_join(coa_stats,
+            by = c("iso_a3_eh" = "coa_iso")) %>% 
+  mutate(across(where(is.numeric), ~ ifelse(is.na(.), 0, .))) %>% 
+  st_as_sf()
+
+```
+
+```{r}
+#| label: Map Bones
+#| include: false
+
+
+# Prepare map elements ----------------------------------------------------
+
+
+## Set bins - Sorts How colors display on map
+
+## Origin
+coo_bins <- c(0, 50000, 100000, 500000, 1000000, 2000000, 
+              3000000, 4000000, 5000000, 6000000, 7000000)
+
+
+
+## Arrival
+coa_bins <- c(0, 10000, 25000, 50000, 75000, 100000, 200000,
+              300000, 500000, Inf)
+
+## Set - Colors / What colors are displayed on map
+
+## Origin
+coo_pal <- colorBin(rev(MetBrewer::MetPalettes$Troy[[1]]),
+                    domain = coo_shp$sum_ref,
+                    bins = coo_bins)
+
+## Arrival
+coa_pal <- colorBin(rev(MetBrewer::MetPalettes$Troy[[1]]),
+                    domain = coa_shp$sum_ref,
+                    bins = coa_bins)
+
+## Labels - Controls our pop-up element on hover
+
+## No scientific notation 
+options(scipen=999)
+
+coo_labels <- sprintf("<strong>%s:</strong><br/>Refugees: %s",
+                      coo_shp$formal_en,
+                      formatC(coo_shp$sum_ref, format = "f", big.mark = ",", digits = 0)) %>%
+  lapply(htmltools::HTML)
+
+coa_labels <- sprintf("<strong>%s:</strong><br/>Resettled: %s",
+                      coa_shp$formal_en,
+                      formatC(coa_shp$sum_ref, format = "f", big.mark = ",", digits = 0)) %>%
+  lapply(htmltools::HTML)
+
+
+create_unhc_maps <- function(dat, pal, label, legend_lab){
+  
+  
+  map <- leaflet(dat) %>%
+    setView(lng = 0, lat = 20, zoom = 1.5) %>% 
+    addTiles() %>%
+    addPolygons(
+            fillColor = ~pal(sum_ref),
+            weight = 1,
+            opacity = 3,
+            color = "lightgray",
+            dashArray = "2",
+            fillOpacity = .7,
+      highlightOptions =
+          highlightOptions(
+                weight = 5,
+                color = "#666",
+                dashArray = "",
+                fillOpacity = 0.7,
+                bringToFront = TRUE),
+      label = label,
+          labelOptions =
+            labelOptions(style =
+                           list("font-weight" = "normal",
+                                padding = "3px 8px"),
+                         textsize = "12px",
+                         direction = "auto")) %>% 
+    addLegend("bottomleft", pal = pal, values = ~sum_ref,
+              title = legend_lab,
+              opacity = 1
+    )
+  
+  return(map)
+  
+}
+
+
+```
+
+```{r}
+#| label: Formatting numbers appearing in in-line text
+#| include: false 
+tot_ref <- sum(coo_shp$sum_ref)
+tot_ref <- formatC(tot_ref, 
+                   format = "f",
+                   big.mark = ",",
+                   digits = 0)
+
+
+
+
+```
+## Welcome & Introduction
+
+Hello! Welcome to the United Nations High Commissioner for Refugees' (UNHCR) snapshot. Below, you'll find data on the global refugee crisis as of 2023. The purpose of this document is to provide users with the means to explore two basic questions.
+
+1. Where have refugees come from?
+2. Where do they go?
+
+Scroll down to find key takeaways and interactive maps designed answer both questions in turn. 
+
+### Key Takeaways 
+
+1. As of 2023, there were **`r tot_ref`** refugees and people in need of international protection across the globe.
+2. Areas of immense concern include **Afghanistan**, **Syria**, **Venezuela**, **Ukraine**, **Sudan**, **South Sudan**, and **Myanmar**.
+3. People in need of international protection most often found refuge in **Iran**, **Turkey**, **Colombia**, **Germany**, **Pakistan**, **Uganda**, **Russia**, **Chad**, and **Peru**.   
+4. Refugees typically find asylum in nation states nearest their home and the initial crisis, but this safety is often dangerous, protracted, and plagued by scarcity.   
+
+
+
+# Mapping the Refugee Crisis - An Overview
+
+::: {.panel-tabset} 
+
+## Where do refugees come from?
+
+```{r}
+#| label: Render Origins Map
+#| echo: false
+
+create_unhc_maps(coo_shp, coo_pal, coo_labels, "UNHCR: Country of Origin (2023)")
+
+```
+
+What happens without the heading???
+
+## Where do refugees go?
+
+
+```{r}
+#| label: Render Asylum Country Map
+#| echo: false
+
+create_unhc_maps(coa_shp, coa_pal, coa_labels, "UNHCR: Country of Origin (2023)")
+
+```
+:::
+
+
+# Data & Analysis
+
+Data come from the [United Nations High Commissioner for Refugees' (UNHCR) Refugee R Package](https://www.unhcr.org/refugee-statistics/insights/explainers/refugees-r-package.html). 
+
+Importantly, analyses are restricted to refugees, who apply for protection through a country of Asylum or UNHCR processes, and other people in need of international protection, who have not been designated refugees or prospective asylum seekers, but have fled across an international border and are in need of aid. Internally Displaced persons (IDPs), who have been displaced but not crossed a border, and prospective asylum seekers, who lodge their claims for protection affirmatively in separate processes, are excluded.
