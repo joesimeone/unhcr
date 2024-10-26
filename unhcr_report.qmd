@@ -3,7 +3,10 @@ title: "2023 Refugee Snapshot - A UNHCR Data Exploration"
 author: "Joe Simeone"
 format: 
   html:
+    embed-resources: true
     theme: darkly
+    toc: true
+    toc-expand: 1
 editor: source
 ---
 
@@ -176,7 +179,7 @@ tot_ref <- formatC(tot_ref,
 
 
 ```
-## Welcome & Introduction
+# Welcome & Introduction
 
 Hello! Welcome to the United Nations High Commissioner for Refugees' (UNHCR) snapshot. Below, you'll find data on the global refugee crisis as of 2023. The purpose of this document is to provide users with the means to explore two basic questions.
 
@@ -185,12 +188,14 @@ Hello! Welcome to the United Nations High Commissioner for Refugees' (UNHCR) sna
 
 Scroll down to find key takeaways and interactive maps designed answer both questions in turn. 
 
-### Key Takeaways 
+
+## Key Takeaways 
 
 1. As of 2023, there were **`r tot_ref`** refugees and people in need of international protection across the globe.
 2. Areas of immense concern include **Afghanistan**, **Syria**, **Venezuela**, **Ukraine**, **Sudan**, **South Sudan**, and **Myanmar**.
 3. People in need of international protection most often found refuge in **Iran**, **Turkey**, **Colombia**, **Germany**, **Pakistan**, **Uganda**, **Russia**, **Chad**, and **Peru**.   
 4. Refugees typically find asylum in nation states nearest their home and the initial crisis, but this safety is often dangerous, protracted, and plagued by scarcity.   
+
 
 
 
@@ -204,11 +209,39 @@ Scroll down to find key takeaways and interactive maps designed answer both ques
 #| label: Render Origins Map
 #| echo: false
 
-create_unhc_maps(coo_shp, coo_pal, coo_labels, "UNHCR: Country of Origin (2023)")
+create_unhc_maps(coo_shp, 
+                 coo_pal, 
+                 coo_labels, 
+                 "UNHCR: Country of Origin (2023)")
 
 ```
 
-What happens without the heading???
+### What is a refugee?
+
+#### Legal Definition 
+
+> Established in the 1951 [1951 Refugee Convention](https://www.unhcr.org/us/about-unhcr/overview/1951-refugee-convention), a refuee is a person "*owing to well-founded fear of being persecuted for reasons of race, religion, nationality, membership of a particular social group or political opinion, is outside the country of [their] nationality and is unable or, owing to such fear, is unwilling to avail [themselves] of the protection of that country.*"
+
+This legal definition was established in the aftermath of World War II, when Europeans were displaced in mass by warfare and genocide. Like most legal definitions, it is a product of its time and context, crafted with a specific people and specific problem in mind. Today, we continue to apply this definition to the many millions forced to flee their home because of violence, persecution, and oppression. The designers of this law doubtless did not anticipate the situation that we find ourselves in today, where failed states, intractable conflicts, and a lack of international will have pushed both the definition and the system that it sparked past its breaking point. Still, for all its flaws, it represents the only form of protection some of the most vulnerable people in existence - the stateless - can leverage. 
+
+
+#### Areas of Immense Concern
+
+Because this document is meant to serve as an overview, the specifics surrounding each country's displacement is beyond our scope. In lieu of providing in text details, which truly warrant their own pages, users can find UNHCR spotlights for countries flagged as of immense concern below. 
+
+1. [Ukraine](https://data.unhcr.org/en/situations/ukraine)
+2. [Venezuela](https://reporting.unhcr.org/operational/situations/venezuela-situation)
+3. [Syria](https://reporting.unhcr.org/operational/situations/syria-situation)
+4. [South Sudan](https://reporting.unhcr.org/operational/situations/south-sudan-situation)
+5. [Sudan](https://reporting.unhcr.org/operational/situations/sudan-situation)
+6. [Afghanistan](https://reporting.unhcr.org/operational/situations/afghanistan-situation)
+7. [Myanmar](https://reporting.unhcr.org/operational/situations/myanmar-situation)
+
+::: {.callout-tip collapse="true"}
+
+#### Important
+While other critical drivers of international displacement, namely poverty and violence perpetrated by citizens rather than the sate, are excluded, once cannot grasp the full scope of forced displacement. The term refugee is specific to a subset of those in need of international protection. 
+:::
 
 ## Where do refugees go?
 
@@ -217,14 +250,19 @@ What happens without the heading???
 #| label: Render Asylum Country Map
 #| echo: false
 
-create_unhc_maps(coa_shp, coa_pal, coa_labels, "UNHCR: Country of Origin (2023)")
+create_unhc_maps(coa_shp, 
+                 coa_pal, 
+                 coa_labels, 
+                 "UNHCR: Country of Origin (2023)")
 
 ```
 :::
 
-
-# Data & Analysis
+-----------
+# Data & Other Considerations 
 
 Data come from the [United Nations High Commissioner for Refugees' (UNHCR) Refugee R Package](https://www.unhcr.org/refugee-statistics/insights/explainers/refugees-r-package.html). 
 
-Importantly, analyses are restricted to refugees, who apply for protection through a country of Asylum or UNHCR processes, and other people in need of international protection, who have not been designated refugees or prospective asylum seekers, but have fled across an international border and are in need of aid. Internally Displaced persons (IDPs), who have been displaced but not crossed a border, and prospective asylum seekers, who lodge their claims for protection affirmatively in separate processes, are excluded.
+Importantly, analyses are restricted to refugees, who apply for protection through a country of Asylum or UNHCR processes, and other people in need of international protection, who have not been designated refugees or prospective asylum seekers, but have fled across an international border and are in need of aid. Internally Displaced persons (IDPs), who have been displaced but not crossed a border, and prospective asylum seekers, who lodge their claims for protection affirmatively in separate processes, are excluded. To see more specifics on who qualifies as a refugee and how the UNHCR produces these counts, users should check out their [methodology page](https://www.unhcr.org/refugee-statistics/methodology) for more detail. 
+
+Any mistakes found here are my own and are unaffiliated with UNHCR or any other professional organization. 
